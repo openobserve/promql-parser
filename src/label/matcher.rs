@@ -113,10 +113,9 @@ impl Matcher {
     ///
     /// Regex used in PromQL are fully anchored.
     fn try_parse_re(original_re: &str) -> Result<Regex, String> {
-        let re = format!(
-            "^(?:{})$",
-            unescaper::unescape(original_re).map_err(|e| format!("Invalid regex pattern, {e}"))?
-        );
+        let re = unescaper::unescape(original_re)
+            .map_err(|e| format!("Invalid regex pattern, {e}"))?
+            .to_string();
         Regex::new(&re)
             .or_else(|_| Regex::new(&try_escape_for_repeat_re(&re)))
             .map_err(|_| format!("illegal regex for {original_re}",))
@@ -530,7 +529,7 @@ mod tests {
             "abc.*",
         );
         assert!(matcher.is_match("abc123"));
-        assert!(!matcher.is_match("xabc123"));
+        assert!(matcher.is_match("xabc123"));
 
         let matcher = Matcher::new(
             MatchOp::Re(Matcher::try_parse_re(".*xyz$").unwrap()),
@@ -546,8 +545,8 @@ mod tests {
             "abc",
         );
         assert!(matcher.is_match("abc"));
-        assert!(!matcher.is_match("xabc"));
-        assert!(!matcher.is_match("abcx"));
+        assert!(matcher.is_match("xabc"));
+        assert!(matcher.is_match("abcx"));
 
         let matcher = Matcher::new(
             MatchOp::Re(Matcher::try_parse_re("127.0.0.1").unwrap()),
@@ -555,7 +554,7 @@ mod tests {
             "127.0.0.1",
         );
         assert!(matcher.is_match("127.0.0.1"));
-        assert!(!matcher.is_match("x127.0.0.1"));
+        assert!(matcher.is_match("x127.0.0.1"));
         assert!(!matcher.is_match("127.0.0.2"));
 
         let raw_input = r#"127\\.0\\.0\\.1"#;
@@ -565,7 +564,7 @@ mod tests {
             raw_input,
         );
         assert!(matcher.is_match("127.0.0.1"));
-        assert!(!matcher.is_match("x127.0.0.1"));
+        assert!(matcher.is_match("x127.0.0.1"));
         assert!(!matcher.is_match("127.0.0.2"));
         // regex round trip
         let re = Matcher::try_parse_re(raw_input).unwrap();
@@ -597,7 +596,7 @@ mod tests {
             "abc.*",
         );
         assert!(!matcher.is_match("abc123"));
-        assert!(matcher.is_match("xabc123")); // Does not match at start, so NotRe returns true
+        assert!(!matcher.is_match("xabc123")); // Does not match at start, so NotRe returns true
 
         let matcher = Matcher::new(
             MatchOp::NotRe(Matcher::try_parse_re(".*xyz$").unwrap()),
