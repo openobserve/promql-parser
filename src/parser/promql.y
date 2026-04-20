@@ -78,6 +78,8 @@ STDDEV
 STDVAR
 SUM
 TOPK
+LIMITK
+LIMIT_RATIO
 %token AGGREGATORS_END
 
 // Keywords.
@@ -467,6 +469,8 @@ metric_identifier -> Result<Token, String>:
         |       STDVAR { lexeme_to_token($lexer, $1) }
         |       SUM { lexeme_to_token($lexer, $1) }
         |       TOPK { lexeme_to_token($lexer, $1) }
+        |       LIMITK { lexeme_to_token($lexer, $1) }
+        |       LIMIT_RATIO { lexeme_to_token($lexer, $1) }
         |       WITHOUT { lexeme_to_token($lexer, $1) }
         |       START { lexeme_to_token($lexer, $1) }
         |       END { lexeme_to_token($lexer, $1) }
@@ -493,6 +497,8 @@ aggregate_op -> Result<Token, String>:
         |       STDVAR { lexeme_to_token($lexer, $1) }
         |       SUM { lexeme_to_token($lexer, $1) }
         |       TOPK { lexeme_to_token($lexer, $1) }
+        |       LIMITK { lexeme_to_token($lexer, $1) }
+        |       LIMIT_RATIO { lexeme_to_token($lexer, $1) }
 ;
 
 // inside of grouping options label names can be recognized as keywords by the lexer.
@@ -522,6 +528,8 @@ maybe_label -> Result<Token, String>:
         |       STDVAR { lexeme_to_token($lexer, $1) }
         |       SUM { lexeme_to_token($lexer, $1) }
         |       TOPK { lexeme_to_token($lexer, $1) }
+        |       LIMITK { lexeme_to_token($lexer, $1) }
+        |       LIMIT_RATIO { lexeme_to_token($lexer, $1) }
         |       START { lexeme_to_token($lexer, $1) }
         |       END { lexeme_to_token($lexer, $1) }
         |       ATAN2 { lexeme_to_token($lexer, $1) }

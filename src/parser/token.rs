@@ -56,6 +56,8 @@ lazy_static! {
             ("bottomk", T_BOTTOMK),
             ("count_values", T_COUNT_VALUES),
             ("quantile", T_QUANTILE),
+            ("limitk", T_LIMITK),
+            ("limit_ratio", T_LIMIT_RATIO),
 
             // Keywords.
             ("offset", T_OFFSET),
@@ -141,6 +143,8 @@ pub(crate) fn token_display(id: TokenId) -> &'static str {
         T_STDVAR => "stdvar",
         T_SUM => "sum",
         T_TOPK => "topk",
+        T_LIMITK => "limitk",
+        T_LIMIT_RATIO => "limit_ratio",
         T_AGGREGATORS_END => "aggregators_end",
 
         // Keywords.
@@ -213,7 +217,10 @@ impl TokenType {
     }
 
     pub fn is_aggregator_with_param(&self) -> bool {
-        matches!(self.0, T_TOPK | T_BOTTOMK | T_COUNT_VALUES | T_QUANTILE)
+        matches!(
+            self.0,
+            T_TOPK | T_BOTTOMK | T_COUNT_VALUES | T_QUANTILE | T_LIMITK | T_LIMIT_RATIO
+        )
     }
 
     pub fn is_comparison_operator(&self) -> bool {
@@ -296,6 +303,8 @@ mod tests {
         assert_eq!(token_display(T_STDVAR), "stdvar");
         assert_eq!(token_display(T_SUM), "sum");
         assert_eq!(token_display(T_TOPK), "topk");
+        assert_eq!(token_display(T_LIMITK), "limitk");
+        assert_eq!(token_display(T_LIMIT_RATIO), "limit_ratio");
         assert_eq!(token_display(T_AGGREGATORS_END), "aggregators_end");
         assert_eq!(token_display(T_KEYWORDS_START), "keywords_start");
         assert_eq!(token_display(T_BOOL), "bool");
@@ -313,11 +322,11 @@ mod tests {
         assert_eq!(token_display(T_PREPROCESSOR_END), "preprocessor_end");
 
         // if new token added in promql.y, this has to be updated
-        for i in 70..=75 {
+        for i in 72..=77 {
             assert_eq!(token_display(i), "not used");
         }
 
-        for i in 76..=255 {
+        for i in 78..=255 {
             assert_eq!(token_display(i), "unknown token");
         }
     }
@@ -373,6 +382,8 @@ mod tests {
         assert!(TokenType(T_BOTTOMK).is_aggregator_with_param());
         assert!(TokenType(T_COUNT_VALUES).is_aggregator_with_param());
         assert!(TokenType(T_QUANTILE).is_aggregator_with_param());
+        assert!(TokenType(T_LIMITK).is_aggregator_with_param());
+        assert!(TokenType(T_LIMIT_RATIO).is_aggregator_with_param());
 
         assert!(!TokenType(T_MAX).is_aggregator_with_param());
         assert!(!TokenType(T_MIN).is_aggregator_with_param());
@@ -444,6 +455,8 @@ mod tests {
         assert!(TokenType(T_STDVAR).is_aggregator());
         assert!(TokenType(T_SUM).is_aggregator());
         assert!(TokenType(T_TOPK).is_aggregator());
+        assert!(TokenType(T_LIMITK).is_aggregator());
+        assert!(TokenType(T_LIMIT_RATIO).is_aggregator());
 
         assert!(!TokenType(T_LOR).is_aggregator());
         assert!(!TokenType(T_ADD).is_aggregator());
