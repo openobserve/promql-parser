@@ -1355,6 +1355,18 @@ mod tests {
                     FunctionArgs::new_args(ex).append_args(Expr::from(5.0)),
                 )
             }),
+            ("max_of(1, 2)", {
+                Expr::new_call(
+                    get_function("max_of").unwrap(),
+                    FunctionArgs::new_args(Expr::from(1.0)).append_args(Expr::from(2.0)),
+                )
+            }),
+            ("min_of(1, 2)", {
+                Expr::new_call(
+                    get_function("min_of").unwrap(),
+                    FunctionArgs::new_args(Expr::from(1.0)).append_args(Expr::from(2.0)),
+                )
+            }),
             // cases from https://prometheus.io/docs/prometheus/latest/querying/functions
             (r#"absent(nonexistent{job="myjob"})"#, {
                 let name = String::from("nonexistent");

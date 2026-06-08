@@ -251,7 +251,17 @@ lazy_static! {
         ("ln", vec![ValueType::Vector], ValueType::Vector),
         ("log10", vec![ValueType::Vector], ValueType::Vector),
         ("log2", vec![ValueType::Vector], ValueType::Vector),
+        (
+            "max_of",
+            vec![ValueType::Scalar, ValueType::Scalar],
+            ValueType::Scalar
+        ),
         ("max_over_time", vec![ValueType::Matrix], ValueType::Vector),
+        (
+            "min_of",
+            vec![ValueType::Scalar, ValueType::Scalar],
+            ValueType::Scalar
+        ),
         ("min_over_time", vec![ValueType::Matrix], ValueType::Vector),
         ("minute", vec![ValueType::Vector], ValueType::Vector),
         ("month", vec![ValueType::Vector], ValueType::Vector),
