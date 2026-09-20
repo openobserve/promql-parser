@@ -196,6 +196,7 @@ lazy_static! {
         ("deg", vec![ValueType::Vector], ValueType::Vector),
         ("delta", vec![ValueType::Matrix], ValueType::Vector),
         ("deriv", vec![ValueType::Matrix], ValueType::Vector),
+        ("end", vec![], ValueType::Scalar),
         ("exp", vec![ValueType::Vector], ValueType::Vector),
         ("floor", vec![ValueType::Vector], ValueType::Vector),
         (
@@ -291,6 +292,7 @@ lazy_static! {
         ),
         ("scalar", vec![ValueType::Vector], ValueType::Scalar),
         ("sgn", vec![ValueType::Vector], ValueType::Vector),
+        ("start", vec![], ValueType::Scalar),
         ("sin", vec![ValueType::Vector], ValueType::Vector),
         ("sinh", vec![ValueType::Vector], ValueType::Vector),
         ("sort", vec![ValueType::Vector], ValueType::Vector),
