@@ -2326,8 +2326,8 @@ mod tests {
                 call(&[0.5, 0.9]),
             ),
             (
-                r#"histogram_quantiles(h, "q", 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99)"#,
-                call(&[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99]),
+                r#"histogram_quantiles(h, "q", 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.99)"#,
+                call(&[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.99]),
             ),
         ];
         assert_cases(Case::new_result_cases(cases));
@@ -2336,6 +2336,10 @@ mod tests {
             (
                 r#"histogram_quantiles(h, "q")"#,
                 "expected at least 3 argument(s) in call to 'histogram_quantiles', got 2",
+            ),
+            (
+                r#"histogram_quantiles(h, "q", 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99)"#,
+                "expected at most 12 argument(s) in call to 'histogram_quantiles', got 13",
             ),
             (
                 r#"histogram_quantiles(h, "q", 0.5, "x")"#,

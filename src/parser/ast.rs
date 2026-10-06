@@ -1575,16 +1575,21 @@ fn check_ast_for_call(ex: Call) -> Result<Expr, String> {
             ));
         }
 
-        // `label_join`, `sort_by_label(_desc)` and `histogram_quantiles` have no maximum argument count.
+        // `label_join`, `sort_by_label`, `sort_by_label_desc` do not have a maximum arguments threshold.
         // this hard code SHOULD be careful if new functions are supported by Prometheus.
-        if actual_args_len > expected_args_len
+        // upstream takes up to ten quantiles in `histogram_quantiles`
+        let max_args_len = if name == "histogram_quantiles" {
+            expected_args_len + 8
+        } else {
+            expected_args_len
+        };
+        if actual_args_len > max_args_len
             && name.ne("label_join")
             && name.ne("sort_by_label")
             && name.ne("sort_by_label_desc")
-            && name.ne("histogram_quantiles")
         {
             return Err(format!(
-                "expected at most {expected_args_len} argument(s) in call to '{name}', got {actual_args_len}"
+                "expected at most {max_args_len} argument(s) in call to '{name}', got {actual_args_len}"
             ));
         }
     }
