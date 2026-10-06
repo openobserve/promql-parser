@@ -14,7 +14,8 @@
 
 use crate::label::{Labels, Matchers, METRIC_NAME};
 use crate::parser::token::{
-    self, token_display, T_BOTTOMK, T_COUNT_VALUES, T_END, T_QUANTILE, T_START, T_TOPK,
+    self, token_display, T_BOTTOMK, T_COUNT_VALUES, T_END, T_LIMITK, T_LIMIT_RATIO, T_QUANTILE,
+    T_START, T_TOPK,
 };
 use crate::parser::token::{Token, TokenId, TokenType};
 use crate::parser::value::ValueType;
@@ -1539,7 +1540,10 @@ fn check_ast_for_aggregate_expr(ex: AggregateExpr) -> Result<Expr, String> {
         "aggregation expression",
     )?;
 
-    if matches!(ex.op.id(), T_TOPK | T_BOTTOMK | T_QUANTILE) {
+    if matches!(
+        ex.op.id(),
+        T_TOPK | T_BOTTOMK | T_QUANTILE | T_LIMITK | T_LIMIT_RATIO
+    ) {
         expect_type(
             ValueType::Scalar,
             ex.param.as_ref().map(|ex| ex.value_type()),
@@ -1573,13 +1577,19 @@ fn check_ast_for_call(ex: Call) -> Result<Expr, String> {
 
         // `label_join`, `sort_by_label`, `sort_by_label_desc` do not have a maximum arguments threshold.
         // this hard code SHOULD be careful if new functions are supported by Prometheus.
-        if actual_args_len > expected_args_len
+        // upstream takes up to ten quantiles in `histogram_quantiles`
+        let max_args_len = if name == "histogram_quantiles" {
+            expected_args_len + 8
+        } else {
+            expected_args_len
+        };
+        if actual_args_len > max_args_len
             && name.ne("label_join")
             && name.ne("sort_by_label")
             && name.ne("sort_by_label_desc")
         {
             return Err(format!(
-                "expected at most {expected_args_len} argument(s) in call to '{name}', got {actual_args_len}"
+                "expected at most {max_args_len} argument(s) in call to '{name}', got {actual_args_len}"
             ));
         }
     }

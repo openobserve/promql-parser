@@ -1255,6 +1255,32 @@ mod tests {
                 let ex = Expr::from(VectorSelector::from("sum"));
                 Expr::new_aggregate_expr(token::T_SUM, None, FunctionArgs::new_args(ex))
             }),
+            ("limitk by (group) (-1, http_requests)", {
+                let ex = Expr::from(VectorSelector::from("http_requests"));
+                let modifier = LabelModifier::include(vec!["group"]);
+                let param = Expr::from(-1.0);
+                let args = FunctionArgs::new_args(param).append_args(ex);
+                Expr::new_aggregate_expr(token::T_LIMITK, Some(modifier), args)
+            }),
+            ("limitk by (group) (1, http_requests)", {
+                let ex = Expr::from(VectorSelector::from("http_requests"));
+                let modifier = LabelModifier::include(vec!["group"]);
+                let param = Expr::from(1.0);
+                let args = FunctionArgs::new_args(param).append_args(ex);
+                Expr::new_aggregate_expr(token::T_LIMITK, Some(modifier), args)
+            }),
+            ("limit_ratio(-1.1, http_requests)", {
+                let ex = Expr::from(VectorSelector::from("http_requests"));
+                let param = Expr::from(-1.1);
+                let args = FunctionArgs::new_args(param).append_args(ex);
+                Expr::new_aggregate_expr(token::T_LIMIT_RATIO, None, args)
+            }),
+            ("limit_ratio(0.2, http_requests)", {
+                let ex = Expr::from(VectorSelector::from("http_requests"));
+                let param = Expr::from(0.2);
+                let args = FunctionArgs::new_args(param).append_args(ex);
+                Expr::new_aggregate_expr(token::T_LIMIT_RATIO, None, args)
+            }),
         ];
         assert_cases(Case::new_result_cases(cases));
 
@@ -1327,6 +1353,18 @@ mod tests {
                 Expr::new_call(
                     get_function("round").unwrap(),
                     FunctionArgs::new_args(ex).append_args(Expr::from(5.0)),
+                )
+            }),
+            ("max_of(1, 2)", {
+                Expr::new_call(
+                    get_function("max_of").unwrap(),
+                    FunctionArgs::new_args(Expr::from(1.0)).append_args(Expr::from(2.0)),
+                )
+            }),
+            ("min_of(1, 2)", {
+                Expr::new_call(
+                    get_function("min_of").unwrap(),
+                    FunctionArgs::new_args(Expr::from(1.0)).append_args(Expr::from(2.0)),
                 )
             }),
             // cases from https://prometheus.io/docs/prometheus/latest/querying/functions
@@ -1455,6 +1493,22 @@ mod tests {
                 }),
             ),
             (
+                r#"histogram_avg(rate(http_request_duration_seconds[10m]))"#,
+                Expr::new_matrix_selector(
+                    Expr::from(VectorSelector::from("http_request_duration_seconds")),
+                    duration::MINUTE_DURATION * 10,
+                )
+                .and_then(|ex| {
+                    Expr::new_call(get_function("rate").unwrap(), FunctionArgs::new_args(ex))
+                })
+                .and_then(|ex| {
+                    Expr::new_call(
+                        get_function("histogram_avg").unwrap(),
+                        FunctionArgs::new_args(ex),
+                    )
+                }),
+            ),
+            (
                 r#"histogram_quantile(0.9, rate(http_request_duration_seconds_bucket[10m]))"#,
                 Expr::new_matrix_selector(
                     Expr::from(VectorSelector::from("http_request_duration_seconds_bucket")),
@@ -1490,6 +1544,38 @@ mod tests {
                     Expr::new_call(
                         get_function("histogram_quantile").unwrap(),
                         FunctionArgs::new_args(Expr::from(0.9_f64)).append_args(ex),
+                    )
+                }),
+            ),
+            (
+                r#"histogram_stddev(rate(http_request_duration_seconds[10m]))"#,
+                Expr::new_matrix_selector(
+                    Expr::from(VectorSelector::from("http_request_duration_seconds")),
+                    duration::MINUTE_DURATION * 10,
+                )
+                .and_then(|ex| {
+                    Expr::new_call(get_function("rate").unwrap(), FunctionArgs::new_args(ex))
+                })
+                .and_then(|ex| {
+                    Expr::new_call(
+                        get_function("histogram_stddev").unwrap(),
+                        FunctionArgs::new_args(ex),
+                    )
+                }),
+            ),
+            (
+                r#"histogram_stdvar(rate(http_request_duration_seconds[10m]))"#,
+                Expr::new_matrix_selector(
+                    Expr::from(VectorSelector::from("http_request_duration_seconds")),
+                    duration::MINUTE_DURATION * 10,
+                )
+                .and_then(|ex| {
+                    Expr::new_call(get_function("rate").unwrap(), FunctionArgs::new_args(ex))
+                })
+                .and_then(|ex| {
+                    Expr::new_call(
+                        get_function("histogram_stdvar").unwrap(),
+                        FunctionArgs::new_args(ex),
                     )
                 }),
             ),
@@ -2170,14 +2256,161 @@ mod tests {
                     Expr::from(VectorSelector::from("bar")),
                 )
             }),
+            // start() and end() are also functions (Prometheus conformance).
+            (
+                "start()",
+                Expr::new_call(get_function("start").unwrap(), FunctionArgs::empty_args()),
+            ),
+            (
+                "end()",
+                Expr::new_call(get_function("end").unwrap(), FunctionArgs::empty_args()),
+            ),
+        ];
+        assert_cases(Case::new_result_cases(cases));
+    }
+
+    #[test]
+    fn test_range_functions_added_for_prometheus_3() {
+        for name in [
+            "first_over_time",
+            "mad_over_time",
+            "ts_of_min_over_time",
+            "ts_of_max_over_time",
+            "ts_of_last_over_time",
+            "ts_of_first_over_time",
+        ] {
+            let expected = Expr::new_matrix_selector(
+                Expr::from(VectorSelector::from("some_metric")),
+                duration::MINUTE_DURATION * 5,
+            )
+            .and_then(|ex| Expr::new_call(get_function(name).unwrap(), FunctionArgs::new_args(ex)));
+            assert_eq!(
+                expected,
+                crate::parser::parse(&format!("{name}(some_metric[5m])"))
+            );
+            assert_eq!(
+                Err(format!(
+                    "expected type matrix in call to function '{name}', got vector"
+                )),
+                crate::parser::parse(&format!("{name}(some_metric)"))
+            );
+        }
+    }
+
+    #[test]
+    fn test_range_and_step_functions() {
+        for name in ["range", "step"] {
+            let call = Expr::new_call(get_function(name).unwrap(), FunctionArgs::empty_args());
+            assert_eq!(call, crate::parser::parse(&format!("{name}()")));
+            assert_eq!(
+                Err(format!("expected 0 argument(s) in call to '{name}', got 1")),
+                crate::parser::parse(&format!("{name}(1)"))
+            );
+        }
+    }
+
+    #[test]
+    fn test_histogram_quantiles() {
+        let call = |phis: &[f64]| {
+            let mut args = FunctionArgs::new_args(Expr::from(VectorSelector::from("h")))
+                .append_args(Expr::from("q"));
+            for phi in phis {
+                args = args.append_args(Expr::from(*phi));
+            }
+            Expr::new_call(get_function("histogram_quantiles").unwrap(), args)
+        };
+        let cases = vec![
+            (r#"histogram_quantiles(h, "q", 0.5)"#, call(&[0.5])),
+            (
+                r#"histogram_quantiles(h, "q", 0.5, 0.9)"#,
+                call(&[0.5, 0.9]),
+            ),
+            (
+                r#"histogram_quantiles(h, "q", 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.99)"#,
+                call(&[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.99]),
+            ),
         ];
         assert_cases(Case::new_result_cases(cases));
 
-        let cases = vec![
-            ("start()", INVALID_QUERY_INFO),
-            ("end()", INVALID_QUERY_INFO),
+        let fail_cases = vec![
+            (
+                r#"histogram_quantiles(h, "q")"#,
+                "expected at least 3 argument(s) in call to 'histogram_quantiles', got 2",
+            ),
+            (
+                r#"histogram_quantiles(h, "q", 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99)"#,
+                "expected at most 12 argument(s) in call to 'histogram_quantiles', got 13",
+            ),
+            (
+                r#"histogram_quantiles(h, "q", 0.5, "x")"#,
+                "expected type scalar in call to function 'histogram_quantiles', got string",
+            ),
         ];
-        assert_cases(Case::new_fail_cases(cases));
+        assert_cases(Case::new_fail_cases(fail_cases));
+    }
+
+    #[test]
+    fn test_start_end_functions_keep_keyword_uses() {
+        let start = || Expr::new_call(get_function("start").unwrap(), FunctionArgs::empty_args());
+        let cases = vec![
+            ("vector(1) * start()", {
+                let one = Expr::new_call(
+                    get_function("vector").unwrap(),
+                    FunctionArgs::new_args(Expr::from(1.0)),
+                );
+                Expr::new_binary_expr(one.unwrap(), token::T_MUL, None, start().unwrap())
+            }),
+            ("foo @ start() - end()", {
+                let lhs = Expr::from(VectorSelector::from("foo")).at_expr(At::Start);
+                let end = Expr::new_call(get_function("end").unwrap(), FunctionArgs::empty_args());
+                Expr::new_binary_expr(lhs.unwrap(), token::T_SUB, None, end.unwrap())
+            }),
+            ("sum by (start, end) (foo)", {
+                let ex = Expr::from(VectorSelector::from("foo"));
+                let modifier = LabelModifier::include(vec!["start", "end"]);
+                Expr::new_aggregate_expr(token::T_SUM, Some(modifier), FunctionArgs::new_args(ex))
+            }),
+        ];
+        assert_cases(Case::new_result_cases(cases));
+        assert_cases(Case::new_fail_cases(vec![(
+            "start(1)",
+            "expected 0 argument(s) in call to 'start', got 1",
+        )]));
+    }
+
+    #[test]
+    fn test_limit_aggregations() {
+        let cases = vec![
+            ("limitk without (job) (2, up)", {
+                let args = FunctionArgs::new_args(Expr::from(2.0))
+                    .append_args(Expr::from(VectorSelector::from("up")));
+                let modifier = LabelModifier::exclude(vec!["job"]);
+                Expr::new_aggregate_expr(token::T_LIMITK, Some(modifier), args)
+            }),
+            ("limitk", Ok(Expr::from(VectorSelector::from("limitk")))),
+            ("sum by (limit_ratio) (foo)", {
+                let ex = Expr::from(VectorSelector::from("foo"));
+                let modifier = LabelModifier::include(vec!["limit_ratio"]);
+                Expr::new_aggregate_expr(token::T_SUM, Some(modifier), FunctionArgs::new_args(ex))
+            }),
+        ];
+        assert_cases(Case::new_result_cases(cases));
+
+        let fail_cases = vec![
+            (
+                r#"limitk("2", up)"#,
+                "expected type scalar in aggregation expression, got string",
+            ),
+            (
+                "limit_ratio(other, up)",
+                "expected type scalar in aggregation expression, got vector",
+            ),
+            (
+                "limitk(up)",
+                "wrong number of arguments for aggregate expression provided, expected 2, got 1",
+            ),
+        ];
+        assert_cases(Case::new_fail_cases(fail_cases));
     }
 
     #[test]

@@ -149,6 +149,7 @@ lazy_static! {
         "sort_by_label",
         "sort_by_label_desc",
         "round",
+        "histogram_quantiles",
     ]);
     static ref FUNCTIONS: HashMap<&'static str, Function> = map!(
         ("abs", vec![ValueType::Vector], ValueType::Vector),
@@ -196,7 +197,13 @@ lazy_static! {
         ("deg", vec![ValueType::Vector], ValueType::Vector),
         ("delta", vec![ValueType::Matrix], ValueType::Vector),
         ("deriv", vec![ValueType::Matrix], ValueType::Vector),
+        ("end", vec![], ValueType::Scalar),
         ("exp", vec![ValueType::Vector], ValueType::Vector),
+        (
+            "first_over_time",
+            vec![ValueType::Matrix],
+            ValueType::Vector
+        ),
         ("floor", vec![ValueType::Vector], ValueType::Vector),
         (
             "histogram_count",
@@ -204,6 +211,7 @@ lazy_static! {
             ValueType::Vector
         ),
         ("histogram_sum", vec![ValueType::Vector], ValueType::Vector),
+        ("histogram_avg", vec![ValueType::Vector], ValueType::Vector),
         (
             "histogram_fraction",
             vec![ValueType::Scalar, ValueType::Scalar, ValueType::Vector],
@@ -212,6 +220,26 @@ lazy_static! {
         (
             "histogram_quantile",
             vec![ValueType::Scalar, ValueType::Vector],
+            ValueType::Vector
+        ),
+        (
+            "histogram_quantiles",
+            vec![
+                ValueType::Vector,
+                ValueType::String,
+                ValueType::Scalar,
+                ValueType::Scalar,
+            ],
+            ValueType::Vector
+        ),
+        (
+            "histogram_stddev",
+            vec![ValueType::Vector],
+            ValueType::Vector
+        ),
+        (
+            "histogram_stdvar",
+            vec![ValueType::Vector],
             ValueType::Vector
         ),
         (
@@ -248,7 +276,18 @@ lazy_static! {
         ("ln", vec![ValueType::Vector], ValueType::Vector),
         ("log10", vec![ValueType::Vector], ValueType::Vector),
         ("log2", vec![ValueType::Vector], ValueType::Vector),
+        ("mad_over_time", vec![ValueType::Matrix], ValueType::Vector),
+        (
+            "max_of",
+            vec![ValueType::Scalar, ValueType::Scalar],
+            ValueType::Scalar
+        ),
         ("max_over_time", vec![ValueType::Matrix], ValueType::Vector),
+        (
+            "min_of",
+            vec![ValueType::Scalar, ValueType::Scalar],
+            ValueType::Scalar
+        ),
         ("min_over_time", vec![ValueType::Matrix], ValueType::Vector),
         ("minute", vec![ValueType::Vector], ValueType::Vector),
         ("month", vec![ValueType::Vector], ValueType::Vector),
@@ -268,6 +307,7 @@ lazy_static! {
             vec![ValueType::Scalar, ValueType::Matrix],
             ValueType::Vector
         ),
+        ("range", vec![], ValueType::Scalar),
         ("rad", vec![ValueType::Vector], ValueType::Vector),
         ("rate", vec![ValueType::Matrix], ValueType::Vector),
         ("resets", vec![ValueType::Matrix], ValueType::Vector),
@@ -278,6 +318,7 @@ lazy_static! {
         ),
         ("scalar", vec![ValueType::Vector], ValueType::Scalar),
         ("sgn", vec![ValueType::Vector], ValueType::Vector),
+        ("start", vec![], ValueType::Scalar),
         ("sin", vec![ValueType::Vector], ValueType::Vector),
         ("sinh", vec![ValueType::Vector], ValueType::Vector),
         ("sort", vec![ValueType::Vector], ValueType::Vector),
@@ -293,6 +334,7 @@ lazy_static! {
             ValueType::Vector
         ),
         ("sqrt", vec![ValueType::Vector], ValueType::Vector),
+        ("step", vec![], ValueType::Scalar),
         (
             "stddev_over_time",
             vec![ValueType::Matrix],
@@ -308,6 +350,26 @@ lazy_static! {
         ("tanh", vec![ValueType::Vector], ValueType::Vector),
         ("time", vec![], ValueType::Scalar),
         ("timestamp", vec![ValueType::Vector], ValueType::Vector),
+        (
+            "ts_of_first_over_time",
+            vec![ValueType::Matrix],
+            ValueType::Vector
+        ),
+        (
+            "ts_of_last_over_time",
+            vec![ValueType::Matrix],
+            ValueType::Vector
+        ),
+        (
+            "ts_of_max_over_time",
+            vec![ValueType::Matrix],
+            ValueType::Vector
+        ),
+        (
+            "ts_of_min_over_time",
+            vec![ValueType::Matrix],
+            ValueType::Vector
+        ),
         ("vector", vec![ValueType::Scalar], ValueType::Vector),
         ("year", vec![ValueType::Vector], ValueType::Vector)
     );
